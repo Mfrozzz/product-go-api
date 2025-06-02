@@ -87,3 +87,75 @@ func (p *productController) GetProductById(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, product)
 }
+
+func (p *productController) DeleteProduct(ctx *gin.Context) {
+	id := ctx.Param("id_product")
+
+	if id == "" {
+		response := model.Response{
+			Message: "id_product is required",
+		}
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	id_product, err := strconv.Atoi(id)
+	if err != nil {
+		response := model.Response{
+			Message: "id_product must be a number",
+		}
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	err = p.productUseCase.DeleteProduct(id_product)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	response := model.Response{
+		Message: "Product deleted successfully",
+	}
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (p *productController) UpdateProduct(ctx *gin.Context) {
+	id := ctx.Param("id_product")
+
+	if id == "" {
+		response := model.Response{
+			Message: "id_product is required",
+		}
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	id_product, err := strconv.Atoi(id)
+	if err != nil {
+		response := model.Response{
+			Message: "id_product must be a number",
+		}
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	var product model.Product
+	err = ctx.BindJSON(&product)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, err)
+		return
+	}
+
+	product.ID = id_product
+
+	updatedProduct, err := p.productUseCase.UpdateProduct(product)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, updatedProduct)
+
+}

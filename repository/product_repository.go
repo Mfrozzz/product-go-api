@@ -90,3 +90,37 @@ func (pr *ProductRepository) GetProductById(id_product int) (*model.Product, err
 	query.Close()
 	return &product, nil
 }
+
+func (pr *ProductRepository) DeleteProduct(id_product int) error {
+	query, err := pr.connection.Prepare("DELETE FROM product WHERE id = $1;")
+	if err != nil {
+		return err
+	}
+	defer query.Close()
+
+	_, err = query.Exec(id_product)
+	return err
+}
+
+func (pr *ProductRepository) UpdateProduct(product model.Product) (*model.Product, error) {
+	query, err := pr.connection.Prepare(
+		"UPDATE product SET product_name = $2, price = $3 WHERE id = $1 RETURNING id, product_name, price;",
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var updatedProduct model.Product
+	err = query.QueryRow(product.ID, product.Name, product.Price).Scan(
+		&updatedProduct.ID,
+		&updatedProduct.Name,
+		&updatedProduct.Price,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	query.Close()
+	return &updatedProduct, nil
+}
