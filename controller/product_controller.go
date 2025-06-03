@@ -20,7 +20,20 @@ func NewProductController(usecase usecase.ProductUsecase) productController {
 }
 
 func (p *productController) GetProducts(ctx *gin.Context) {
-	products, err := p.productUseCase.GetProducts()
+	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "page must be a positive number"})
+		return
+	}
+
+	limit, err := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
+	if err != nil || limit < 1 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "limit must be a positive number"})
+		return
+	}
+	name := ctx.Query("name")
+
+	products, err := p.productUseCase.GetProducts(page, limit, name)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 	}
@@ -36,10 +49,20 @@ func (p *productController) CreateProduct(ctx *gin.Context) {
 		return
 	}
 
+	if product.Name == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Product name is required"})
+		return
+	}
+
+	if product.Price < 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Price must be non-negative"})
+		return
+	}
+
 	insertedProduct, err := p.productUseCase.CreateProduct(product)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -60,6 +83,11 @@ func (p *productController) GetProductById(ctx *gin.Context) {
 	}
 
 	id_product, err := strconv.Atoi(id)
+
+	if id_product < 1 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "id_product must be a positive number"})
+		return
+	}
 
 	if err != nil {
 		response := model.Response{
@@ -100,6 +128,12 @@ func (p *productController) DeleteProduct(ctx *gin.Context) {
 	}
 
 	id_product, err := strconv.Atoi(id)
+
+	if id_product < 1 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "id_product must be a positive number"})
+		return
+	}
+
 	if err != nil {
 		response := model.Response{
 			Message: "id_product must be a number",
@@ -140,19 +174,34 @@ func (p *productController) UpdateProduct(ctx *gin.Context) {
 		return
 	}
 
-	var product model.Product
-	err = ctx.BindJSON(&product)
-
+	existingProduct, err := p.productUseCase.GetProductById(id_product)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	product.ID = id_product
+	if existingProduct == nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
+		return
+	}
 
-	updatedProduct, err := p.productUseCase.UpdateProduct(product)
+	var updateData map[string]interface{}
+	if err := ctx.BindJSON(&updateData); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
+		return
+	}
+
+	if name, ok := updateData["name"].(string); ok {
+		existingProduct.Name = name
+	}
+
+	if price, ok := updateData["price"].(float64); ok {
+		existingProduct.Price = price
+	}
+
+	updatedProduct, err := p.productUseCase.UpdateProduct(*existingProduct)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

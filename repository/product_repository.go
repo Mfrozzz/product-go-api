@@ -16,28 +16,46 @@ func NewProductRepository(connection *sql.DB) ProductRepository {
 	}
 }
 
-func (pr *ProductRepository) GetProducts() ([]model.Product, error) {
-	query := "SELECT id, product_name, price FROM product;"
-	rows, err := pr.connection.Query(query)
+func (pr *ProductRepository) GetProducts(page, limit int, name string) ([]model.Product, error) {
+
+	if page < 1 {
+		page = 1
+	}
+
+	if limit < 1 {
+		limit = 10
+	}
+
+	offset := (page - 1) * limit
+
+	query := "SELECT id, product_name, price FROM product"
+	var args []interface{}
+	argIdx := 1
+
+	if name != "" {
+		query += fmt.Sprintf(" WHERE product_name ILIKE $%d", argIdx)
+		args = append(args, "%"+name+"%")
+		argIdx++
+	}
+
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIdx, argIdx+1)
+	args = append(args, limit, offset)
+
+	rows, err := pr.connection.Query(query, args...)
+
 	if err != nil {
 		fmt.Println(err)
 		return []model.Product{}, err
 	}
+
 	var productList []model.Product
 	var productObj model.Product
 
 	for rows.Next() {
-		err = rows.Scan(
-			&productObj.ID,
-			&productObj.Name,
-			&productObj.Price,
-		)
-
-		if err != nil {
+		if err := rows.Scan(&productObj.ID, &productObj.Name, &productObj.Price); err != nil {
 			fmt.Println(err)
 			return []model.Product{}, err
 		}
-
 		productList = append(productList, productObj)
 	}
 
