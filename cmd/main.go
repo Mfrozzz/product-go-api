@@ -3,6 +3,7 @@ package main
 import (
 	"product-go-api/controller"
 	"product-go-api/db"
+	"product-go-api/middleware"
 	"product-go-api/repository"
 	"product-go-api/usecase"
 
@@ -11,6 +12,7 @@ import (
 
 func main() {
 	server := gin.Default()
+	server.Use(middleware.RateLimiter())
 
 	dbConnection, err := db.ConnectDB()
 	if err != nil {
@@ -22,12 +24,6 @@ func main() {
 	ProductUseCase := usecase.NewProductUsecase(ProductRepository)
 
 	ProductController := controller.NewProductController(ProductUseCase)
-
-	server.GET("/ping", func(ctx *gin.Context) {
-		ctx.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
 
 	server.GET("/products", ProductController.GetProducts)
 	server.POST("/product", ProductController.CreateProduct)
