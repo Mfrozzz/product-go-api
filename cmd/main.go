@@ -8,9 +8,11 @@ import (
 	"product-go-api/usecase"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	godotenv.Load()
 	server := gin.Default()
 	server.Use(middleware.RateLimiter())
 
@@ -19,17 +21,25 @@ func main() {
 		panic(err)
 	}
 
+	UserRepository := repository.NewUserRepository(dbConnection)
+	UserUseCase := usecase.NewUserUsecase(UserRepository)
+	UserController := controller.NewUserController(UserUseCase)
+
 	ProductRepository := repository.NewProductRepository(dbConnection)
-
 	ProductUseCase := usecase.NewProductUsecase(ProductRepository)
-
 	ProductController := controller.NewProductController(ProductUseCase)
 
-	server.GET("/products", ProductController.GetProducts)
-	server.POST("/product", ProductController.CreateProduct)
-	server.GET("/product/:id_product", ProductController.GetProductById)
-	server.DELETE("/product/:id_product", ProductController.DeleteProduct)
-	server.PUT("/product/:id_product", ProductController.UpdateProduct)
+	server.POST("/register", UserController.CreateUser)
+	server.POST("/login", UserController.GetUserByEmail)
+
+	protectedRoutes := server.Group("/api")
+	protectedRoutes.Use(middleware.AuthMiddleware())
+
+	protectedRoutes.GET("/products", ProductController.GetProducts)
+	protectedRoutes.POST("/products", ProductController.CreateProduct)
+	protectedRoutes.GET("/products/:id_product", ProductController.GetProductById)
+	protectedRoutes.DELETE("/products/:id_product", ProductController.DeleteProduct)
+	protectedRoutes.PUT("/products/:id_product", ProductController.UpdateProduct)
 
 	server.Run(":8000")
 }
