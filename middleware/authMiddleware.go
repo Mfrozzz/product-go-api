@@ -8,11 +8,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/joho/godotenv"
 )
 
-var jwtKey = []byte(os.Getenv("JWT_SECRET_KEY"))
-
 func AuthMiddleware() gin.HandlerFunc {
+	godotenv.Load()
+	var jwtKey = []byte(os.Getenv("JWT_SECRET_KEY"))
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {

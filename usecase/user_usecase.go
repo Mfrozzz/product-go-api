@@ -8,10 +8,9 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 )
-
-var jwtKey = []byte(os.Getenv("JWT_SECRET_KEY"))
 
 type UserUsecase struct {
 	repository repository.UserRepository
@@ -44,9 +43,11 @@ func (uu *UserUsecase) CreateUser(user model.User) (model.User, error) {
 }
 
 func (uu *UserUsecase) GetUserByEmail(req model.LoginRequest) (string, error) {
+	godotenv.Load()
+	var jwtKey = []byte(os.Getenv("JWT_SECRET_KEY"))
 	user, err := uu.repository.GetUserByEmail(req.Email)
 
-	if err != nil || user == nil || user.Password != req.Password {
+	if err != nil || user == nil {
 		return "", err
 	}
 
@@ -64,5 +65,6 @@ func (uu *UserUsecase) GetUserByEmail(req model.LoginRequest) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return tokenString, nil
 }
