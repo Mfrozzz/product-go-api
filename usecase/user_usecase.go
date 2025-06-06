@@ -68,3 +68,28 @@ func (uu *UserUsecase) GetUserByEmail(req model.LoginRequest) (string, error) {
 
 	return tokenString, nil
 }
+
+func (uu *UserUsecase) GetUserById(id_user int) (*model.User, error) {
+	user, err := uu.repository.GetUserById(id_user)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (uu *UserUsecase) DeleteUser(id_user int) error {
+	err := uu.repository.DeleteUser(id_user)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (uu *UserUsecase) UpdateUser(user model.User) (model.User, error) {
+	updatedUser, err := uu.repository.UpdateUser(user)
+	if err != nil {
+		return model.User{}, err
+	}
+	return *updatedUser, nil
+}

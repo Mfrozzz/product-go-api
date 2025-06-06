@@ -44,7 +44,6 @@ func (pr *ProductRepository) GetProducts(page, limit int, name string) ([]model.
 	rows, err := pr.connection.Query(query, args...)
 
 	if err != nil {
-		fmt.Println(err)
 		return []model.Product{}, err
 	}
 
@@ -53,7 +52,6 @@ func (pr *ProductRepository) GetProducts(page, limit int, name string) ([]model.
 
 	for rows.Next() {
 		if err := rows.Scan(&productObj.ID, &productObj.Name, &productObj.Price); err != nil {
-			fmt.Println(err)
 			return []model.Product{}, err
 		}
 		productList = append(productList, productObj)
@@ -70,13 +68,11 @@ func (pr *ProductRepository) CreateProduct(product model.Product) (int, error) {
 		"INSERT INTO product" + "(product_name, price)" + "VALUES ($1, $2) RETURNING id;",
 	)
 	if err != nil {
-		fmt.Println(err)
 		return 0, err
 	}
 
 	err = query.QueryRow(product.Name, product.Price).Scan(&id)
 	if err != nil {
-		fmt.Println(err)
 		return 0, err
 	}
 
@@ -88,7 +84,6 @@ func (pr *ProductRepository) GetProductById(id_product int) (*model.Product, err
 	query, err := pr.connection.Prepare("SELECT * FROM product WHERE id = $1;")
 
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
@@ -101,7 +96,6 @@ func (pr *ProductRepository) GetProductById(id_product int) (*model.Product, err
 			return nil, nil
 		}
 
-		fmt.Println(err)
 		return nil, err
 	}
 
