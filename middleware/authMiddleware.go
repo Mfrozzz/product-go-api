@@ -35,6 +35,13 @@ func AuthMiddleware() gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, response)
 			return
 		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			if role, ok := claims["role"].(string); ok {
+				ctx.Set("role", role)
+			}
+		}
+
 		ctx.Next()
 	}
 }

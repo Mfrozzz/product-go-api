@@ -36,14 +36,17 @@ func main() {
 	protectedRoutes.Use(middleware.AuthMiddleware())
 
 	protectedRoutes.GET("/users/:id_user", UserController.GetUserById)
-	protectedRoutes.DELETE("/users/:id_user", UserController.DeleteUser)
 	protectedRoutes.PUT("/users/:id_user", UserController.UpdateUser)
 
 	protectedRoutes.GET("/products", ProductController.GetProducts)
 	protectedRoutes.POST("/products", ProductController.CreateProduct)
 	protectedRoutes.GET("/products/:id_product", ProductController.GetProductById)
-	protectedRoutes.DELETE("/products/:id_product", ProductController.DeleteProduct)
 	protectedRoutes.PUT("/products/:id_product", ProductController.UpdateProduct)
+
+	adminRoutes := protectedRoutes.Group("/admin")
+	adminRoutes.Use(middleware.RequireAdmin())
+	adminRoutes.DELETE("/products/:id_product", ProductController.DeleteProduct)
+	adminRoutes.DELETE("/users/:id_user", UserController.DeleteUser)
 
 	server.Run(":8000")
 }

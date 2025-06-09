@@ -23,6 +23,10 @@ func (uc *UserController) CreateUser(ctx *gin.Context) {
 	var user model.User
 	err := ctx.BindJSON(&user)
 
+	if user.Role == "" {
+		user.Role = "user"
+	}
+
 	if err != nil || user.Username == "" || user.Password == "" {
 		response := model.Response{
 			Message: "Invalid request body",
@@ -40,7 +44,19 @@ func (uc *UserController) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, createdUser)
+	response := model.Response{
+		Message: "Register successful",
+	}
+
+	ctx.JSON(http.StatusCreated, gin.H{
+		"Message": response.Message,
+		"User": map[string]interface{}{
+			"user_id":  createdUser.ID,
+			"email":    createdUser.Email,
+			"username": createdUser.Username,
+			"role":     createdUser.Role,
+		},
+	})
 }
 
 func (uc *UserController) GetUserByEmail(ctx *gin.Context) {
@@ -204,6 +220,16 @@ func (uc *UserController) UpdateUser(ctx *gin.Context) {
 	}
 	if password, ok := updateData["password"].(string); ok && password != "" {
 		existingUser.Password = password
+	}
+	if newRole, ok := updateData["role"].(string); ok {
+		if role, exists := ctx.Get("role"); !exists || role != "admin" {
+			response := model.Response{
+				Message: "Only admin can change user role.",
+			}
+			ctx.JSON(http.StatusForbidden, response)
+			return
+		}
+		existingUser.Role = newRole
 	}
 
 	updatedUser, err := uc.userUseCase.UpdateUser(*existingUser)

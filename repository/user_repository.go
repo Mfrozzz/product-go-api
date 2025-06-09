@@ -51,7 +51,7 @@ func (ur *UserRepository) GetUserByEmail(email string) (*model.User, error) {
 
 	var user model.User
 
-	err = query.QueryRow(email).Scan(&user.ID, &user.Username, &user.Email, &user.Password)
+	err = query.QueryRow(email).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.Role)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -74,7 +74,7 @@ func (ur *UserRepository) GetUserById(id_user int) (*model.User, error) {
 
 	var user model.User
 
-	err = query.QueryRow(id_user).Scan(&user.ID, &user.Email, &user.Username, &user.Password)
+	err = query.QueryRow(id_user).Scan(&user.ID, &user.Email, &user.Username, &user.Password, &user.Role)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -101,7 +101,7 @@ func (ur *UserRepository) DeleteUser(id_user int) error {
 
 func (ur *UserRepository) UpdateUser(user model.User) (*model.User, error) {
 	query, err := ur.connection.Prepare(
-		"UPDATE users SET username = $2, email = $3, password = $4 WHERE id = $1 RETURNING id, username, email, password;",
+		"UPDATE users SET username = $2, email = $3, password = $4, role = $5 WHERE id = $1 RETURNING id, username, email, password, role;",
 	)
 	if err != nil {
 		return nil, err
@@ -114,11 +114,12 @@ func (ur *UserRepository) UpdateUser(user model.User) (*model.User, error) {
 		return nil, err
 	}
 
-	err = query.QueryRow(user.ID, user.Username, user.Email, string(hashedPassword)).Scan(
+	err = query.QueryRow(user.ID, user.Username, user.Email, string(hashedPassword), user.Role).Scan(
 		&updatedUser.ID,
 		&updatedUser.Username,
 		&updatedUser.Email,
 		&updatedUser.Password,
+		&updatedUser.Role,
 	)
 
 	if err != nil {
