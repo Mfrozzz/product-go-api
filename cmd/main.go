@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"product-go-api/controller"
 	"product-go-api/db"
 	"product-go-api/middleware"
@@ -48,5 +49,5 @@ func main() {
 	adminRoutes.DELETE("/products/:id_product", ProductController.DeleteProduct)
 	adminRoutes.DELETE("/users/:id_user", UserController.DeleteUser)
 
-	server.Run(":8000")
+	server.Run(os.Getenv("PORT"))
 }

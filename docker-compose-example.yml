@@ -1,0 +1,23 @@
+services:
+  go-app:
+    container_name: <CONTAINER-NAME>
+    image: product-go-api
+    build: .
+    ports:
+      - "8000:8000" #FOR EXAMPLE
+    depends_on:
+      - go_db
+  go_db:
+    container_name: <CONTAINER-DATABASE-NAME>
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: <YOUR-POSTGRES-PASSWORD>
+      POSTGRES_USER: <YOUR-POSTGRES-USER>
+      POSTGRES_DB: <YOUR-POSTGRES-DATABASE>
+    ports:
+      - "5432:5432" # DEFAULT
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata: {}
