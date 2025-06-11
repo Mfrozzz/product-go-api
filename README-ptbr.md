@@ -27,18 +27,22 @@ API RESTful para gerenciamento de produtos e usuários, desenvolvida em Go com G
 #### <div>Repositório</div>
 
 1. **Clone o repositório:**
+
    ```sh
    git clone https://github.com/Mfrozzz/product-go-api.git
    cd product-go-api
    ```
 
 2. **Consigure o arquivo `.env`:**
+
     * Copie o arquivo `.env.example` para `.env` e preencha com as suas configurações:
+
     ```sh
     cp .env.example .env
     ```
 
     * Exemplo do arquivo:
+
     ```.env
     JWT_SECRET="YOUR-SECRET-KEY"
     PORT=":8000"
@@ -52,7 +56,10 @@ API RESTful para gerenciamento de produtos e usuários, desenvolvida em Go com G
 
     * **Importante:** O projeto depende das variáveis do `.env` para conectar ao banco e gerar tokens JWT.
 
+---
+
 #### <div>Docker</div>
+
 * Para subir os containers execute:
 
 ```sh
@@ -64,6 +71,8 @@ docker compose up -d
 ```
 docker build -t product-go-api .
 ```
+
+---
 
 #### <div>Banco de Dados</div>
 
@@ -77,6 +86,7 @@ psql -d postgres -U postgres
 ```
 
 * Criar Tabelas no Banco de dados:
+
 ```sh
 CREATE TABLE product (
   id SERIAL PRIMARY KEY,
@@ -98,6 +108,8 @@ CREATE TABLE users (
 
 #### <div>Produtos</div>
 
+---
+
 #### <div>Usuários</div>
 
 ---
@@ -117,7 +129,10 @@ cd product-go-api/cmd
 go run main.go
 ```
 
+---
+
 #### <div>Para fazer Build</div>
+
 ```sh
 docker build -t product-go-api .
 ```
