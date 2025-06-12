@@ -5,6 +5,7 @@ RESTful API for product and user management, developed in Go with Gin, PostgreSQ
 ## Table of Contents 📋
 * [Requirements](#requirements)
 * [Setting Up the Environment](#setting-up-the-environment)
+* [Middlewares](#middlewares)
 * [Endpoints](#endpoints)
 * [Scripts](#scripts)
 * [System Architecture](#architecture)
@@ -13,7 +14,7 @@ RESTful API for product and user management, developed in Go with Gin, PostgreSQ
 
 ---
 
-### <div id="requirements">Requirements 📄</div>
+## <div id="requirements">Requirements 📄</div>
 
 - Go 1.24.3 or 1.20+
 - Docker
@@ -22,9 +23,9 @@ RESTful API for product and user management, developed in Go with Gin, PostgreSQ
 
 ---
 
-### <div id="setting-up-the-environment">Setting Up the Environment ⚙️</div>
+## <div id="setting-up-the-environment">Setting Up the Environment ⚙️</div>
 
-#### <div>Repository</div>
+### <div>Repository</div>
 
 1. **Clone the repository:**
 
@@ -56,9 +57,14 @@ RESTful API for product and user management, developed in Go with Gin, PostgreSQ
 
     * **Important:** The project depends on the `.env` variables to connect to the database and generate JWT tokens.
 
+3. **Install Go dependencies:**
+  ```sh
+  go mod tidy
+  ```
+
 ---
 
-#### <div>Docker</div>
+### <div>Docker</div>
 
 * To start the containers, run:
 
@@ -74,7 +80,7 @@ docker build -t product-go-api .
 
 ---
 
-#### <div>Database</div>
+### <div>Database</div>
 
 The choice of tool to manage the database is up to the developer, such as DBeaver or any other software of your preference. However, in this case, access to the database will be demonstrated via command line, accessing directly the Docker container where the database is running.
 
@@ -104,19 +110,179 @@ CREATE TABLE users (
 
 ---
 
-### <div id="endpoints">Endpoints 📌</div>
+## <div id="middlewares">Middlewares ↔️</div>
 
-#### <div>Products</div>
+The project uses three main middlewares to ensure security, access control, and request limiting:
+
+### <div>1. **Auth Middleware**</div>
+
+Responsible for validating the JWT token sent in the `Authorization` header.
+- Only allows the user to access routes if authenticated (logged in).
+- If the token is valid, extracts the `role` field from the claims and stores it in the request context (`ctx.Set("role", role)`), allowing other middlewares and handlers to know the authenticated user's role.
+- If the token is missing or invalid, returns a 401 (Unauthorized) error.
+
+### <div>2. **Rate Limiter Middleware**</div>
+
+Limits the number of requests per IP to prevent abuse (rate limiting).
+- Each IP can make up to 3 requests per second, with a maximum burst of 5.
+- If the limit is exceeded, returns a 429 (Too Many Requests) error.
+
+### <div>3. **Require Admin Middleware**</div>
+
+Ensures that only users with the admin role can access certain routes.
+
+- Checks the `role` field in the request context.
+- If the user is not an admin, returns a 401 (Unauthorized) error and blocks access to the route.
 
 ---
 
-#### <div>Users</div>
+## <div id="endpoints">Endpoints 📌</div>
+
+### <div>Products</div>
 
 ---
 
-### <div id="scripts">Scripts ⌨️</div>
+### <div>Users</div>
 
-#### <div>To Run</div>
+#### POST `/register`
+
+Registers a new user.
+
+- Request Body:
+  ```json
+  {
+    "username":"Test Example",
+    "email": "user@example.com",
+    "password": "password123"
+  }
+  ```
+
+- Response:
+  ```json
+  {
+    "Message": "Register successful",
+    "User": {
+      "email": "user@example.com",
+      "role": "user",
+      "user_id": 1,
+      "username":"Test Example"
+    }
+  }
+  ```
+
+#### POST `/login`
+
+Authenticates a user and returns a JWT token.
+
+- Request Body:
+  ```json
+  {
+    "email": "user@example.com",
+    "password": "password123"
+  }
+  ```
+
+- Response:
+  ```json
+  {
+    "Message": "Login successful",
+    "token": "your_jwt_token"
+  }
+  ```
+
+#### GET `/api/users/:id_user`
+
+Retrieves information about a specific user.
+
+- Path Params:
+  - `id_user`: The user ID.
+
+- Headers:
+  - `Authorization`: Bearer `jwt_token`
+
+- Applied Middlewares::
+  - [Auth Middleware](./middleware/authMiddleware.go)
+
+- Response:
+  ```json
+  {
+    "id_user": 1,
+    "username":"Test Example",
+    "email": "user@example.com",
+    "password": "your_encrypted_password",
+    "role": "user"
+  }
+  ```
+
+#### PUT `/api/users/:id_user`
+
+Updates information for a specific user.
+
+- Any authenticated user can update their own data (username, email, password).
+- Only administrators can change the `role` field of any user.
+
+- Path Params:
+  - `id_user`: The user ID.
+
+- Headers:
+  - `Authorization`: Bearer `jwt_token`
+
+- Applied Middlewares:
+  - [Auth Middleware](./middleware/authMiddleware.go)
+  - [Require Admin](./middleware/requireAdmin.go)
+
+- Request Body:
+  ```json
+  {
+    "username": "New Name",
+    "email": "newemail@example.com",
+    "password": "newPassword123",
+    "role": "admin" // Will only be updated if the authenticated user is admin
+  }
+  ```
+
+- Response:
+  ```json
+  {
+    "id_user": 1,
+    "username":"New Name",
+    "email": "newemail@example.com",
+    "password": "your_new_encrypted_password",
+    "role": "admin"
+  }
+  ```
+
+- Notes:
+  - If a regular user tries to change the role field, a 403 (Forbidden) error will be returned.
+  - Fields not sent in the JSON remain unchanged.
+  - The password field is always saved in encrypted form.
+
+#### DELETE `/api/admin/users/:id_user`
+
+Only administrators can access this endpoint and delete a user from the database.
+
+- Path Params:
+  - `id_user`: The user ID.
+
+- Headers:
+  - `Authorization`: Bearer `jwt_token`
+
+- Applied Middlewares:
+  - [Auth Middleware](./middleware/authMiddleware.go)
+  - [Require Admin](./middleware/requireAdmin.go)
+
+- Response:
+  ```json
+  {
+    "Message": "User deleted successfully"
+  }
+  ```
+
+---
+
+## <div id="scripts">Scripts ⌨️</div>
+
+### <div>To Run</div>
 
 ```sh
 docker compose up -d
@@ -131,7 +297,7 @@ go run main.go
 
 ---
 
-#### <div>To Build</div>
+### <div>To Build</div>
 
 ```sh
 docker build -t product-go-api .
@@ -146,7 +312,7 @@ go build -o main cmd/main.go
 
 ---
 
-### <div id="architecture">System Architecture 🏛️</div>
+## <div id="architecture">System Architecture 🏛️</div>
 
 The system architecture follows the Clean Architecture pattern, clearly separating responsibilities into layers. This makes the project easier to maintain, test, and evolve.
 
@@ -174,7 +340,7 @@ The system architecture follows the Clean Architecture pattern, clearly separati
 
 ---
 
-### <div id="folder-structure">Folder Structure 📁</div>
+## <div id="folder-structure">Folder Structure 📁</div>
 
 ```
 product-go-api/
