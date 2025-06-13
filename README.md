@@ -10,6 +10,7 @@ RESTful API for product and user management, developed in Go with Gin, PostgreSQ
 * [Scripts](#scripts)
 * [System Architecture](#architecture)
 * [Folder Structure](#folder-structure)
+* [Useful Links](#useful-links)
 * [PT-BR version](README-ptbr.md)
 
 ---
@@ -108,26 +109,34 @@ CREATE TABLE users (
 );
 ```
 
+### <div>Tip: How to create an admin user ✉️</div>
+
+To turn a user into an admin directly in the database, run:
+
+```sh
+UPDATE users SET role = 'admin' WHERE id = 1;
+```
+
 ---
 
 ## <div id="middlewares">Middlewares ↔️</div>
 
 The project uses three main middlewares to ensure security, access control, and request limiting:
 
-### <div>1. **Auth Middleware**</div>
+### <div id="auth-middleware">1. **Auth Middleware**</div>
 
 Responsible for validating the JWT token sent in the `Authorization` header.
 - Only allows the user to access routes if authenticated (logged in).
 - If the token is valid, extracts the `role` field from the claims and stores it in the request context (`ctx.Set("role", role)`), allowing other middlewares and handlers to know the authenticated user's role.
 - If the token is missing or invalid, returns a 401 (Unauthorized) error.
 
-### <div>2. **Rate Limiter Middleware**</div>
+### <div id="rate-limiter">2. **Rate Limiter Middleware**</div>
 
 Limits the number of requests per IP to prevent abuse (rate limiting).
 - Each IP can make up to 3 requests per second, with a maximum burst of 5.
 - If the limit is exceeded, returns a 429 (Too Many Requests) error.
 
-### <div>3. **Require Admin Middleware**</div>
+### <div id="require-admin">3. **Require Admin Middleware**</div>
 
 Ensures that only users with the admin role can access certain routes.
 
@@ -139,6 +148,161 @@ Ensures that only users with the admin role can access certain routes.
 ## <div id="endpoints">Endpoints 📌</div>
 
 ### <div>Products</div>
+
+#### POST `/api/products`
+
+Registers a new product in the system.
+
+- Headers:
+  - `Authorization`: Bearer `jwt_token`
+
+- Applied Middlewares:
+  - [Auth Middleware](#auth-middleware)
+
+- Request Body:
+  ```json
+  {
+    "name": "Potato",
+    "price": 4.45
+  }
+  ```
+
+- Response:
+  ```json
+  {
+    "id_product": 1,
+    "name": "Potato",
+    "price": 4.45
+  }
+  ```
+
+#### GET `/api/products`
+
+Lists all products from the database. You can use parameters, filters, and pagination in the results.
+
+- **Query Parameters**:
+  - `page` (optional): Page number, default = 1
+  - `limit` (optional): Number of items per page, default = 10
+  - `name` (optional): Filter by product name
+
+- **Examples**:
+  - List all products (default):
+  ```
+  GET /api/products
+  ```
+  - List products with pagination, limit, and name filter:
+  ```
+  GET /api/products?page=1&limit=5&name=Potato
+  ```
+
+- Headers:
+  - `Authorization`: Bearer `jwt_token`
+
+- Applied Middlewares:
+  - [Auth Middleware](#auth-middleware)
+
+- Response:
+  ```json
+  [
+    {
+      "id_product": 1,
+      "name": "Potato",
+      "price": 4.45
+    },
+    {
+      "id_product": 9,
+      "name": "Potato Chips",
+      "price": 9
+    }
+    ...
+  ]
+  ```
+
+#### GET `/api/products/:id_product`
+
+Retrieves information about a specific product.
+
+- Path Params:
+  - `id_product`: The product ID.
+
+- Headers:
+  - `Authorization`: Bearer `jwt_token`
+
+- Applied Middlewares:
+  - [Auth Middleware](#auth-middleware)
+
+- Response:
+  ```json
+  {
+    "id_product": 1,
+    "name": "Potato",
+    "price": 4.45
+  }
+  ```
+
+#### PUT `/api/products/:id_product`
+
+Updates information for a specific product.
+
+- Path Params:
+  - `id_product`: The product ID.
+
+- Headers:
+  - `Authorization`: Bearer `jwt_token`
+
+- Applied Middlewares:
+  - [Auth Middleware](#auth-middleware)
+
+- Object before update:
+  ```json
+  {
+    "id_product": 14,
+    "name": "Pasta",
+    "price": 10.2
+  }
+  ```
+
+- Request Body:
+  ```json
+  {
+    "name": "Spaghetti Pasta",
+    "price": 13.2
+  }
+  ```
+
+- Response:
+  ```json
+  {
+    "id_product": 14,
+    "name": "Spaghetti Pasta",
+    "price": 13.2
+  }
+  ```
+
+- Notes:
+  - Fields not sent in the JSON remain unchanged.
+
+
+#### DELETE `/api/admin/products/:id_product`
+
+Only administrators can access this endpoint and delete a product from the database.
+
+- Path Params:
+  - `id_product`: The product ID
+
+- Headers:
+  - `Authorization`: Bearer `jwt_token`
+
+- Applied Middlewares:
+  - [Auth Middleware](#auth-middleware)
+  - [Require Admin](#require-admin)
+
+- Response:
+  ```json
+  {
+    "Message": "Product deleted successfully"
+  }
+  ```
 
 ---
 
@@ -201,7 +365,7 @@ Retrieves information about a specific user.
   - `Authorization`: Bearer `jwt_token`
 
 - Applied Middlewares::
-  - [Auth Middleware](./middleware/authMiddleware.go)
+  - [Auth Middleware](#auth-middleware)
 
 - Response:
   ```json
@@ -228,8 +392,19 @@ Updates information for a specific user.
   - `Authorization`: Bearer `jwt_token`
 
 - Applied Middlewares:
-  - [Auth Middleware](./middleware/authMiddleware.go)
-  - [Require Admin](./middleware/requireAdmin.go)
+  - [Auth Middleware](#auth-middleware)
+  - [Require Admin](#require-admin)
+
+- Object before update:
+```json
+  {
+    "id_user": 1,
+    "username": "Name",
+    "email": "email@example.com",
+    "password": "Password123",
+    "role": "user"
+  }
+```
 
 - Request Body:
   ```json
@@ -268,8 +443,8 @@ Only administrators can access this endpoint and delete a user from the database
   - `Authorization`: Bearer `jwt_token`
 
 - Applied Middlewares:
-  - [Auth Middleware](./middleware/authMiddleware.go)
-  - [Require Admin](./middleware/requireAdmin.go)
+  - [Auth Middleware](#auth-middleware)
+  - [Require Admin](#require-admin)
 
 - Response:
   ```json
@@ -377,3 +552,17 @@ product-go-api/
 ```
 
 ---
+
+## <div id="useful-links">Useful Links 🔗</div>
+
+- [Go (Golang) Official Documentation](https://golang.org/doc/)
+- [Go Modules Reference](https://blog.golang.org/using-go-modules)
+- [Gin Web Framework Documentation](https://gin-gonic.com/en/docs/)
+- [Docker Documentation](https://docs.docker.com/)
+- [PostgreSQL Official Documentation](https://www.postgresql.org/docs/)
+- [JWT Introduction](https://jwt.io/introduction)
+- [Insomnia](https://insomnia.rest/) / [Postman](https://www.postman.com/) — API testing tools
+
+---
+
+Developed by [Marcos Vinicius Boava](https://github.com/Mfrozzz), using as a base [Go Lab Tutoriais](https://www.youtube.com/watch?v=3p4mpId_ZU8&t=3317s).
