@@ -8,6 +8,7 @@ import (
 	"product-go-api/repository"
 	"product-go-api/usecase"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -15,6 +16,7 @@ import (
 func main() {
 	godotenv.Load()
 	server := gin.Default()
+	server.Use(cors.Default())
 	server.Use(middleware.RateLimiter())
 
 	dbConnection, err := db.ConnectDB()
