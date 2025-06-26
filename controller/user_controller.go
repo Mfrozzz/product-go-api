@@ -131,6 +131,27 @@ func (uc *UserController) GetUserById(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, user)
 }
 
+func (uc *UserController) GetUserInfo(ctx *gin.Context) {
+	userIDValue, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+		return
+	}
+	userID, ok := userIDValue.(int)
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in context"})
+		return
+	}
+
+	user, err := uc.userUseCase.GetUserById(userID)
+	if err != nil || user == nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, user)
+}
+
 func (uc *UserController) DeleteUser(ctx *gin.Context) {
 	id := ctx.Param("id_user")
 

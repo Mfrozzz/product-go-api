@@ -40,6 +40,9 @@ func AuthMiddleware() gin.HandlerFunc {
 			if role, ok := claims["role"].(string); ok {
 				ctx.Set("role", role)
 			}
+			if id, ok := claims["id"].(float64); ok {
+				ctx.Set("user_id", int(id))
+			}
 		}
 
 		ctx.Next()

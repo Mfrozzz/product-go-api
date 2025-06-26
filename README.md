@@ -378,6 +378,27 @@ Retrieves information about a specific user.
   }
   ```
 
+#### GET `/api/user/info`
+
+Returns the information of the currently authenticated user (based on the JWT token).
+
+- Headers:
+  - `Authorization`: Bearer `jwt_token`
+
+- Applied Middlewares:
+  - [Auth Middleware](#auth-middleware)
+
+- Response:
+  ```json
+  {
+    "id_user": 1,
+    "username":"Test Example",
+    "email": "user@example.com",
+    "password": "your_encrypted_password",
+    "role": "user"
+  }
+  ```
+
 #### PUT `/api/users/:id_user`
 
 Updates information for a specific user.

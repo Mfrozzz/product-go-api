@@ -38,6 +38,7 @@ func main() {
 	protectedRoutes := server.Group("/api")
 	protectedRoutes.Use(middleware.AuthMiddleware())
 
+	protectedRoutes.GET("/user/info", UserController.GetUserInfo)
 	protectedRoutes.GET("/users/:id_user", UserController.GetUserById)
 	protectedRoutes.PUT("/users/:id_user", UserController.UpdateUser)
 

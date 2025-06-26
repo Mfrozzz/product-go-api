@@ -56,6 +56,7 @@ func (uu *UserUsecase) GetUserByEmail(req model.LoginRequest) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id":    user.ID,
 		"email": user.Email,
 		"role":  user.Role,
 		"exp":   time.Now().Add(time.Hour * 2).Unix(),
