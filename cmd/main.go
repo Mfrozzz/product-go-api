@@ -16,7 +16,13 @@ import (
 func main() {
 	godotenv.Load()
 	server := gin.Default()
-	server.Use(cors.Default())
+	server.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
 	server.Use(middleware.RateLimiter())
 
 	dbConnection, err := db.ConnectDB()
