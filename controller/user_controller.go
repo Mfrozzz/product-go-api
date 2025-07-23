@@ -19,6 +19,32 @@ func NewUserController(usecase usecase.UserUsecase) UserController {
 	}
 }
 
+func (uc *UserController) GetUsers(ctx *gin.Context) {
+	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		response := model.Response{
+			Message: "Page must be a positive number.",
+		}
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+	limit, err := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
+	if err != nil || limit < 1 {
+		response := model.Response{
+			Message: "Limit must be a positive number.",
+		}
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+	name := ctx.Query("name")
+	users, err := uc.userUseCase.GetUsers(page, limit, name)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, users)
+}
+
 func (uc *UserController) CreateUser(ctx *gin.Context) {
 	var user model.User
 	err := ctx.BindJSON(&user)

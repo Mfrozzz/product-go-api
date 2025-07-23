@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"product-go-api/model"
 
 	"golang.org/x/crypto/bcrypt"
@@ -128,4 +129,48 @@ func (ur *UserRepository) UpdateUser(user model.User) (*model.User, error) {
 
 	query.Close()
 	return &updatedUser, nil
+}
+
+func (ur *UserRepository) GetUsers(page, limit int, name string) ([]model.User, error) {
+	if page < 1 {
+		page = 1
+	}
+
+	if limit < 1 {
+		limit = 10
+	}
+
+	offset := (page - 1) * limit
+	query := "SELECT id, username, email, role FROM users"
+	var args []interface{}
+	argIdx := 1
+
+	if name != "" {
+		query += fmt.Sprintf(" WHERE username ILIKE $%d", argIdx)
+		args = append(args, "%"+name+"%")
+		argIdx++
+	}
+
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIdx, argIdx+1)
+	args = append(args, limit, offset)
+
+	rows, err := ur.connection.Query(query, args...)
+
+	if err != nil {
+		return []model.User{}, err
+	}
+
+	var userList []model.User
+	var userObj model.User
+
+	for rows.Next() {
+		if err := rows.Scan(&userObj.ID, &userObj.Username, &userObj.Email, &userObj.Role); err != nil {
+			return []model.User{}, err
+		}
+		userList = append(userList, userObj)
+	}
+
+	rows.Close()
+	return userList, nil
+
 }

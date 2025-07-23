@@ -22,6 +22,10 @@ func NewUserUsecase(repository repository.UserRepository) UserUsecase {
 	}
 }
 
+func (uu *UserUsecase) GetUsers(page, limit int, name string) ([]model.User, error) {
+	return uu.repository.GetUsers(page, limit, name)
+}
+
 func (uu *UserUsecase) CreateUser(user model.User) (model.User, error) {
 	existingUser, err := uu.repository.GetUserByEmail(user.Email)
 
