@@ -55,7 +55,7 @@ func main() {
 
 	adminRoutes := protectedRoutes.Group("/admin")
 	adminRoutes.Use(middleware.RequireAdmin())
-	adminRoutes.GET("/users", UserController.GetUsers) //write get users endpoint in READMEs
+	adminRoutes.GET("/users", UserController.GetUsers)
 	adminRoutes.DELETE("/products/:id_product", ProductController.DeleteProduct)
 	adminRoutes.DELETE("/users/:id_user", UserController.DeleteUser)
 

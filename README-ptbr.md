@@ -399,6 +399,53 @@ Retorna as informações do usuário autenticado (baseado no Token JWT).
   }
   ```
 
+#### GET `/api/admin/users`
+
+Retorna todos os usuários do banco de dados. Pode ser usado parâmetros, filtros e paginação nos resultados
+
+- **Parâmetros de Busca**:
+  - `page` (opcional): Número da página, valor padrão = 1
+  - `limit` (opcional): Número de itens por página, valor padrão = 10
+  - `name` (opcional): Filtro pelo nome do usuário
+
+- **Exemplos**:
+  - Listar todos os usuários (padrão):
+  ```
+  GET /api/admin/users
+  ```
+  - Listar usuários com paginação, limite e filtro por nome:
+  ```
+  GET /api/admin/users?page=1&limit=5&name=user
+  ```
+
+- Headers:
+  - `Authorization`: Bearer `jwt_token`
+
+- Middlewares Aplicados:
+  - [Auth Middleware](#auth-middleware)
+  - [Require Admin](#require-admin)
+
+- Response:
+  ```json
+  [
+    {
+      "id_user": 1,
+      "username":"Test Example",
+      "email": "user@example.com",
+      "password": "your_encrypted_password",
+      "role": "user"
+    },
+    {
+      "id_user": 2,
+      "username":"Test Example 2",
+      "email": "user2@example.com",
+      "password": "your_encrypted_password",
+      "role": "user2"
+    }
+    ...
+  ]
+  ```
+
 #### PUT `/api/users/:id_user`
 
 Atualiza as informações de um usuário específico.

@@ -399,6 +399,53 @@ Returns the information of the currently authenticated user (based on the JWT to
   }
   ```
 
+#### GET `/api/admin/users`
+
+Lists all users from the database. You can use parameters, filters, and pagination in the results.
+
+- **Query Parameters**:
+  - `page` (optional): Page number, default = 1
+  - `limit` (optional): Number of items per page, default = 10
+  - `name` (optional): Filter by username
+
+- **Examples**:
+  - List all users (default):
+  ```
+  GET /api/admin/users
+  ```
+  - List users with pagination, limit, and name filter:
+  ```
+  GET /api/admin/users?page=1&limit=5&name=user
+  ```
+
+- Headers:
+  - `Authorization`: Bearer `jwt_token`
+
+- Applied Middlewares:
+  - [Auth Middleware](#auth-middleware)
+  - [Require Admin](#require-admin)
+
+- Response:
+  ```json
+  [
+    {
+      "id_user": 1,
+      "username":"Test Example",
+      "email": "user@example.com",
+      "password": "your_encrypted_password",
+      "role": "user"
+    },
+    {
+      "id_user": 2,
+      "username":"Test Example 2",
+      "email": "user2@example.com",
+      "password": "your_encrypted_password",
+      "role": "user2"
+    }
+    ...
+  ]
+  ```
+
 #### PUT `/api/users/:id_user`
 
 Updates information for a specific user.
