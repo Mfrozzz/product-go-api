@@ -10,7 +10,7 @@ import (
 func RequireAdmin() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		role, exists := ctx.Get("role")
-		if !exists || role != "admin" {
+		if !exists || (role != "admin" && role != "super_admin") {
 			response := model.Response{
 				Message: "Only Admins are allowed here.",
 			}

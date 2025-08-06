@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 	"product-go-api/model"
 	"product-go-api/usecase"
@@ -198,6 +199,43 @@ func (uc *UserController) DeleteUser(ctx *gin.Context) {
 		return
 	}
 
+	roleRaw, _ := ctx.Get("role")
+	role, _ := roleRaw.(string)
+	userIDRaw, _ := ctx.Get("id_user")
+	requesterID, _ := userIDRaw.(int)
+
+	targetUser, err := uc.userUseCase.GetUserById(id_user)
+	if err != nil {
+		response := model.Response{
+			Message: "User not found.",
+		}
+		ctx.JSON(http.StatusNotFound, response)
+		return
+	}
+
+	if targetUser.Role == "super_admin" && requesterID == targetUser.ID {
+		response := model.Response{
+			Message: "Super admin cannot delete themselves.",
+		}
+		ctx.JSON(http.StatusForbidden, response)
+		return
+	}
+
+	if targetUser.Role == "super_admin" && role != "super_admin" {
+		response := model.Response{
+			Message: "Only super admin can delete another super admin.",
+		}
+		ctx.JSON(http.StatusForbidden, response)
+		return
+	}
+	if targetUser.Role == "admin" && role != "super_admin" {
+		response := model.Response{
+			Message: "Only super admin can delete an admin.",
+		}
+		ctx.JSON(http.StatusForbidden, response)
+		return
+	}
+
 	err = uc.userUseCase.DeleteUser(id_user)
 	if err != nil {
 		response := model.Response{
@@ -259,6 +297,37 @@ func (uc *UserController) UpdateUser(ctx *gin.Context) {
 		return
 	}
 
+	requesterRoleRaw, _ := ctx.Get("role")
+	requesterRole := fmt.Sprintf("%v", requesterRoleRaw)
+
+	if newRole, ok := updateData["role"].(string); ok {
+		if requesterRole != "admin" && requesterRole != "super_admin" {
+			response := model.Response{
+				Message: "Only admins can change user role.",
+			}
+			ctx.JSON(http.StatusForbidden, response)
+			return
+		}
+
+		if (existingUser.Role == "admin" || existingUser.Role == "super_admin") && requesterRole != "super_admin" {
+			response := model.Response{
+				Message: "Only super admin can change roles of admins or super admins.",
+			}
+			ctx.JSON(http.StatusForbidden, response)
+			return
+		}
+
+		if newRole == "super_admin" && requesterRole != "super_admin" {
+			response := model.Response{
+				Message: "Only super admin can assign super admin role.",
+			}
+			ctx.JSON(http.StatusForbidden, response)
+			return
+		}
+
+		existingUser.Role = newRole
+	}
+
 	if username, ok := updateData["username"].(string); ok {
 		existingUser.Username = username
 	}
@@ -267,16 +336,6 @@ func (uc *UserController) UpdateUser(ctx *gin.Context) {
 	}
 	if password, ok := updateData["password"].(string); ok && password != "" {
 		existingUser.Password = password
-	}
-	if newRole, ok := updateData["role"].(string); ok {
-		if role, exists := ctx.Get("role"); !exists || role != "admin" {
-			response := model.Response{
-				Message: "Only admin can change user role.",
-			}
-			ctx.JSON(http.StatusForbidden, response)
-			return
-		}
-		existingUser.Role = newRole
 	}
 
 	updatedUser, err := uc.userUseCase.UpdateUser(*existingUser)
