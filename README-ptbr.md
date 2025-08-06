@@ -451,7 +451,9 @@ Retorna todos os usuários do banco de dados. Pode ser usado parâmetros, filtro
 Atualiza as informações de um usuário específico.
 
 - Qualquer usuário autenticado pode atualizar seus próprios dados (username, email, password).
-- Apenas administradores podem alterar o campo `role` de qualquer usuário.
+- Apenas **super_admins** têm permissão para::
+  - Promover um usuário para `super_admin`
+  - Modificar a role de outro `admin` ou `super_admin`
 
 - Path Params:
   - `id_user`: O ID do usuário.
@@ -480,7 +482,7 @@ Atualiza as informações de um usuário específico.
     "username": "New Name",
     "email": "newemail@example.com",
     "password": "newPassword123",
-    "role": "admin" // Só será atualizado se o usuário autenticado for admin
+    "role": "admin" // Só será atualizado se o usuário autenticado for admin ou super_admin
   }
   ```
 
@@ -496,9 +498,12 @@ Atualiza as informações de um usuário específico.
   ```
 
 - Observações:
-  - Se um usuário comum tentar alterar o campo role, receberá erro 403 (Forbidden).
+  - Se um usuário sem as permissões necessárias tentar alterar o campo de role, um erro 403 (Forbidden) será retornado.
   - Campos não enviados no JSON permanecem inalterados.
   - O campo password sempre será salvo de forma criptografada.
+  - Apenas `super_admins` podem:
+    - Promover usuários para `super_admin`
+    - Alterar a role de usuários com role `admin` ou `super_admin`
 
 #### DELETE `/api/admin/users/:id_user`
 
@@ -520,6 +525,10 @@ Apenas administradores podem acessar esse endpoint e excluir um usuário do banc
     "Message": "User deleted successfully"
   }
   ```
+
+- Notes:
+  - Apenas **super_admins** têm permissão para deletar usuários com a role `admin` ou `super_admin`.
+  - Se um `admin` tentar deletar outro `admin` ou um `super_admin`, um erro `403 Forbidden` será retornado.
 
 ---
 

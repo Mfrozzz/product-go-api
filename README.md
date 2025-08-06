@@ -451,7 +451,9 @@ Lists all users from the database. You can use parameters, filters, and paginati
 Updates information for a specific user.
 
 - Any authenticated user can update their own data (username, email, password).
-- Only administrators can change the `role` field of any user.
+- Only **super_admins** are allowed to:
+  - Promote a user to `super_admin`
+  - Modify the role of another `admin` or `super_admin`
 
 - Path Params:
   - `id_user`: The user ID.
@@ -480,7 +482,7 @@ Updates information for a specific user.
     "username": "New Name",
     "email": "newemail@example.com",
     "password": "newPassword123",
-    "role": "admin" // Will only be updated if the authenticated user is admin
+    "role": "admin" // Will only be updated if the authenticated user is admin or super_admin
   }
   ```
 
@@ -496,9 +498,12 @@ Updates information for a specific user.
   ```
 
 - Notes:
-  - If a regular user tries to change the role field, a 403 (Forbidden) error will be returned.
+  - If a user without the required permissions tries to change the role field, a 403 (Forbidden) error will be returned.
   - Fields not sent in the JSON remain unchanged.
   - The password field is always saved in encrypted form.
+  - Only `super_admins` can:
+    - Promote users to `super_admin`
+    - Change the role of users with role `admin` or `super_admin`
 
 #### DELETE `/api/admin/users/:id_user`
 
@@ -520,6 +525,10 @@ Only administrators can access this endpoint and delete a user from the database
     "Message": "User deleted successfully"
   }
   ```
+
+- Notes:
+  - Only **super_admins** are allowed to delete users with the role `admin` or `super_admin`.
+  - If an `admin` attempts to delete another `admin` or a `super_admin`, a `403 Forbidden` error will be returned.
 
 ---
 
