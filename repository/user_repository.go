@@ -101,6 +101,21 @@ func (ur *UserRepository) DeleteUser(id_user int) error {
 }
 
 func (ur *UserRepository) UpdateUser(user model.User) (*model.User, error) {
+	var currentPassword string
+	err := ur.connection.QueryRow("SELECT password FROM users WHERE id = $1", user.ID).Scan(&currentPassword)
+	if err != nil {
+		return nil, err
+	}
+
+	passwordToSave := currentPassword
+	if user.Password != "" && user.Password != currentPassword {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, err
+		}
+		passwordToSave = string(hashedPassword)
+	}
+
 	query, err := ur.connection.Prepare(
 		"UPDATE users SET username = $2, email = $3, password = $4, role = $5 WHERE id = $1 RETURNING id, username, email, password, role;",
 	)
@@ -110,12 +125,7 @@ func (ur *UserRepository) UpdateUser(user model.User) (*model.User, error) {
 
 	var updatedUser model.User
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-
-	err = query.QueryRow(user.ID, user.Username, user.Email, string(hashedPassword), user.Role).Scan(
+	err = query.QueryRow(user.ID, user.Username, user.Email, passwordToSave, user.Role).Scan(
 		&updatedUser.ID,
 		&updatedUser.Username,
 		&updatedUser.Email,

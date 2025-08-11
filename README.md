@@ -117,6 +117,12 @@ To turn a user into an admin directly in the database, run:
 UPDATE users SET role = 'admin' WHERE id = 1;
 ```
 
+To turn a user into an super_admin directly in the database, run:
+
+```sh
+UPDATE users SET role = 'super_admin' WHERE id = 1;
+```
+
 ---
 
 ## <div id="middlewares">Middlewares ↔️</div>
